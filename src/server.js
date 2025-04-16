@@ -10,25 +10,6 @@ process.on('unhandledRejection', reason => {
 });
 
 // Now import your other dependencies
-import express from 'express';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const app = express();
-// your middlewares, routes, db connection, etc.
-
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log('MongoDB connected');
-    app.listen(10000, () => {
-      console.log('Server started at http://localhost:10000');
-    });
-  })
-  .catch(err => {
-    console.error('Error connecting to MongoDB:', err);
-  });
 import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
