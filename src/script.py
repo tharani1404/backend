@@ -7,6 +7,16 @@ import time
 import datetime
 import logging  # Import logging
 import atexit
+import sys  # Add this import for sys module
+try:
+    from dotenv import load_dotenv, find_dotenv
+except ImportError:
+    # If python-dotenv is not installed, define dummy functions
+    def load_dotenv(*args, **kwargs):
+        print("python-dotenv not installed, using only os.environ", file=sys.stderr)
+        return False
+    def find_dotenv(*args, **kwargs):
+        return None
 
 # Configure logging
 logging.basicConfig(
@@ -16,16 +26,43 @@ logging.basicConfig(
     filemode='a'  # Append to the log file
 )
 
+def get_env_variable(key, default=None):
+    """
+    Get an environment variable with fallback mechanisms:
+    1. Try os.environ
+    2. Try loading from .env file if python-dotenv is available
+    3. Use default value if provided
+    4. Return None if not found
+    """
+    # Try getting from os.environ first
+    value = os.environ.get(key)
+    
+    # If not found and dotenv is available, try loading from .env file
+    env_file = find_dotenv(usecwd=True)
+    if env_file:
+        load_dotenv(env_file)
+        # Try again with os.environ
+        value = os.environ.get(key)
+    
+    # If still not found, use default
+    if value is None:
+        value = default
+        if default is not None:
+            print(f"Using default value for {key}: {default}", file=sys.stderr)
+        else:
+            print(f"Warning: {key} not found in environment variables or .env file", file=sys.stderr)
+    
+    return value
+
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 # Environment variables for secure configuration
-MONGODB_URI = os.environ.get("MONGODB_URI")
-DATABASE_NAME = os.environ.get("DATABASE_NAME", "newsDB")
-COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "news_articles")
+MONGODB_URI = get_env_variable("MONGODB_URI")
+DATABASE_NAME = get_env_variable("DATABASE_NAME", "newsDB")
+COLLECTION_NAME = get_env_variable("COLLECTION_NAME", "news_articles")
 
 if not MONGODB_URI:
     logging.error("MONGODB_URI environment variable not set. Exiting.")
-    import sys
     sys.exit(1)  # Exit with an error code
 else:
     logging.info(f"Using MongoDB URI: {MONGODB_URI}")

@@ -12,6 +12,15 @@ from functools import lru_cache
 import logging
 import signal
 import time
+try:
+    from dotenv import load_dotenv, find_dotenv
+except ImportError:
+    # If python-dotenv is not installed, define dummy functions
+    def load_dotenv(*args, **kwargs):
+        print("python-dotenv not installed, using only os.environ", file=sys.stderr)
+        return False
+    def find_dotenv(*args, **kwargs):
+        return None
 
 # Setup logging
 logging.basicConfig(level=logging.INFO,
@@ -21,6 +30,36 @@ logger = logging.getLogger(__name__)
 # Create Flask app
 from flask import Flask, request, jsonify
 app = Flask(__name__)
+
+def get_env_variable(key, default=None):
+    """
+    Get an environment variable with fallback mechanisms:
+    1. Try os.environ
+    2. Try loading from .env file if python-dotenv is available
+    3. Use default value if provided
+    4. Return None if not found
+    """
+    # Try getting from os.environ first
+    value = os.environ.get(key)
+    
+    # If not found and dotenv is available, try loading from .env file
+    if value is None:
+        # Load .env file if it exists
+        env_file = find_dotenv(usecwd=True)
+        if env_file:
+            load_dotenv(env_file)
+            # Try again with os.environ
+            value = os.environ.get(key)
+    
+    # If still not found, use default
+    if value is None:
+        value = default
+        if default is not None:
+            print(f"Using default value for {key}: {default}", file=sys.stderr)
+        else:
+            print(f"Warning: {key} not found in environment variables or .env file", file=sys.stderr)
+    
+    return value
 
 def extract_first_paragraph(text):
     """
@@ -91,13 +130,14 @@ def get_location_details(pincode):
         return {"error": f"API error: {str(e)}"}
 
 # Environment variables for secure configuration
-MONGODB_URI = os.environ.get("MONGODB_URI")
-DATABASE_NAME = os.environ.get("DATABASE_NAME", "newsDB")
-COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "news_articles")
-INDEX_FILE_PATH = os.environ.get("INDEX_FILE_PATH", "news_search.index")
-ARTICLE_IDS_FILE_PATH = os.environ.get("ARTICLE_IDS_FILE_PATH", "article_ids.json")
-CACHE_EXPIRY = int(os.environ.get("CACHE_EXPIRY", "86400"))  # 24 hours in seconds
-MODEL_NAME = os.environ.get("MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
+# Try to get from os.environ first, then fall back to dotenv
+MONGODB_URI = get_env_variable("MONGODB_URI")
+DATABASE_NAME = get_env_variable("DATABASE_NAME", "newsDB")
+COLLECTION_NAME = get_env_variable("COLLECTION_NAME", "news_articles")
+INDEX_FILE_PATH = get_env_variable("INDEX_FILE_PATH", "news_search.index")
+ARTICLE_IDS_FILE_PATH = get_env_variable("ARTICLE_IDS_FILE_PATH", "article_ids.json")
+CACHE_EXPIRY = int(get_env_variable("CACHE_EXPIRY", "86400"))  # 24 hours in seconds
+MODEL_NAME = get_env_variable("MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
 
 if not MONGODB_URI:
     logger.error("MONGODB_URI not set")
