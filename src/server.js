@@ -43,6 +43,7 @@ import cors from 'cors';
 // Start the Python script when backend starts
 // const pythonProcess = startPythonScript(); // Remove the call
 dotenv.config();
+import fs from 'fs';
 console.log("Checking for service account key...");
 if (process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64) {
   const keyFilePath = './controllers/keys.json';
