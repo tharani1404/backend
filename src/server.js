@@ -44,6 +44,13 @@ import cors from 'cors';
 // const pythonProcess = startPythonScript(); // Remove the call
 
 dotenv.config();
+import fs from 'fs';
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64) {
+  const keyFilePath = './keys.json';
+  const decoded = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64, 'base64').toString('utf8');
+  fs.writeFileSync(keyFilePath, decoded);
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = keyFilePath;
+}
 const app = express();
 app.use(cors());
 
