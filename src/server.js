@@ -42,7 +42,6 @@ import cors from 'cors';
 
 // Start the Python script when backend starts
 // const pythonProcess = startPythonScript(); // Remove the call
-
 dotenv.config();
 import fs from 'fs';
 if (process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64) {
@@ -51,7 +50,6 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_BASE64) {
   fs.writeFileSync(keyFilePath, decoded);
   process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH = keyFilePath;
 }
-
 const app = express();
 app.use(cors());
 
